@@ -1,0 +1,23 @@
+{
+  "name": "chem-puzzle",
+  "version": "1.0.0",
+  "description": "puzzle game made with phina.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "chem-puzzle"
+  },
+  "author": "pentamania",
+  "license": "ISC",
+  "devDependencies": {
+    "babel-preset-es2015": "^6.3.13",
+    "gulp": "^3.9.0",
+    "gulp-babel": "^6.1.2",
+    "gulp-concat": "^2.6.0",
+    "gulp-replace": "^0.5.4",
+    "gulp-typescript": "^2.10.0"
+  }
+}
