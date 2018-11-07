@@ -33,6 +33,7 @@ phina.define("Block", {
         this.frame = 0; //種類によって変える
         this.grouped = false;
     },
+
     update: function(app) {
         // if (this.type > 10){
         this.tempImage.fill = this.colors[this.type];

@@ -4,6 +4,8 @@
   "description": "puzzle game made with phina.js",
   "main": "index.js",
   "scripts": {
+    "dev": "gulp watch",
+    "build": "gulp build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

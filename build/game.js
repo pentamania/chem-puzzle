@@ -19,19 +19,19 @@ var KEY_DELAY = 9;
 
 var BASIC_SCORE = 10;
 var BORDER_SCORE_UNIT = 20000;
-/**
- * リソースの読み込み
- */
-var ASSETS = {
-    image: {},
-    spritesheet: {},
-    sound: {}
-};
+
+// const ASSETS = {
+//     image: {},
+//     sound: {
+//         'drop': './assets/kick.mp3'
+//     },
+// };
 
 /**
  * ゲーム起動処理
  */
 phina.globalize();
+
 phina.main(function () {
     var app = GameApp({
         // startLabel: 'title',
@@ -41,6 +41,7 @@ phina.main(function () {
         height: SCREEN_HEIGHT,
         fps: 60
     });
+
     app.run();
 });
 
@@ -82,6 +83,7 @@ phina.define("Block", {
         this.frame = 0; //種類によって変える
         this.grouped = false;
     },
+
     update: function update(app) {
         // if (this.type > 10){
         this.tempImage.fill = this.colors[this.type];
@@ -174,12 +176,11 @@ phina.define("SpecialGauge", {
 /**
  * MainScene
  */
-phina.define("MainScene", {
+var MainScene = phina.define("", {
     superClass: "CanvasScene",
 
     init: function init() {
         this.superInit({
-            // backgroundColor: 'rgb(0, 0, 0)',
             backgroundColor: MAIN_BACKGROUND_COLOR,
             width: SCREEN_WIDTH,
             height: SCREEN_HEIGHT
@@ -264,12 +265,12 @@ phina.define("MainScene", {
         }).setPosition(SCREEN_WIDTH * 0.7, SCREEN_HEIGHT * 0.3).addChildTo(this);
 
         this.instructionLabel = Label({
-            text: "仮説１：z or xキーで回転するらしい" + '\n' + "仮説２：同じ色同士でくっつけると良いらしい" + '\n' + "仮説３：下のゲージが溜まったら\nSPACEキーを押すと良いらしい",
+            text: "仮説１：z or xキーで回転する" + '\n' + "仮説２：同じ色同士でくっつけると良い" + '\n' + "仮説３：下のゲージが溜まったら\nSPACEキーを押すと良い",
             fill: "white",
             fontSize: 20
         }).setPosition(this.comboCountLabel.x, this.comboCountLabel.y * 1.8).addChildTo(this);
 
-        // ゲージ
+        //   ゲージ
         this.gauge = SpecialGauge(0, GAMEFIELD_HEIGHT + 8).addChildTo(this);
         // this.gauge.on('pointingStart', ()=>{this.flushAction()});
         this.recoveryValue = this.INIT_RECOVERY_VALUE;
@@ -279,16 +280,32 @@ phina.define("MainScene", {
         //     fontSize: 18,
         // }).setPosition(this.gauge.width/2+24, this.gauge.y+this.gauge.height*2).addChildTo(this);
 
-        // エフェクト
+        //  エフェクト
         this.effectFilter = EffectFilter(GAMEFIELD_WIDTH, GAMEFIELD_HEIGHT).setOrigin(0, 1).setPosition(0, GAMEFIELD_HEIGHT).addChildTo(this.gameLayer);
         // this.effectFilter.visible = false;
+
+        //  仮想キー
+        var BUTTON_KEYS = {
+            // opt:{},
+            up: ['↑', 'xpos', 'y']
+        };
+        var opt = {
+            width: 40,
+            height: 40,
+            fill: 'rgb(238, 117, 117)',
+            text: '↑'
+        };
+        this.buttonGroup = CanvasElement().addChildTo(this);
+        this.rightKey = Button(opt).addChildTo(this.buttonGroup);
+        this.rightKey.position.set(100, 300);
+        this.buttonGroup.position.set(0, GAMEFIELD_HEIGHT / 2);
     },
 
     update: function update(app) {
         var _this = this;
 
         if (this.isSleeping) return;
-        var p = app.pointing;
+        var p = app.pointer;
         var kb = app.keyboard;
         var map = this.map;
         var piece = this.piece;
@@ -332,7 +349,7 @@ phina.define("MainScene", {
                 _this.px++;
             }
         };
-        if (kb.getKeyDown('right')) rightKeyHandler();
+        if (kb.getKeyDown('right') || p.getPointingStart() && this.rightKey.hitTest(p.x, p.y)) rightKeyHandler();
         // if (kb.getKey('right')) {
         //     if (this.timer%KEY_DELAY !== 0 ) return;
         //     keyRightHandler();
@@ -340,7 +357,6 @@ phina.define("MainScene", {
 
         if (kb.getKeyDown('left')) {
             // if (this.timer%KEY_DELAY !== 0 ) return;
-            // console.log("left");
 
             // hit test
             for (var x = 0; x < piece.length; x++) {
@@ -382,7 +398,7 @@ phina.define("MainScene", {
             this.flushAction();
         }
 
-        // 落下処理 : 同時に発生させない
+        // 落下処理 : 入力と自然落下を同時に発生させない
         if (kb.getKey('down') && this.timer % KEY_DELAY === 0) {
             // 下に入力
             this.stackCheck();
@@ -487,7 +503,7 @@ phina.define("MainScene", {
             this.px = this._initPos.x;
             this.py = this._initPos.y;
 
-            // ゲームオーバーチェック：ピース初期位置にすでに配置されている場合
+            // ゲームオーバーチェック：ピース位置にすでに配置されている場合
             for (var x = 0; x < this.piece.length; x++) {
                 for (var y = 0; y < this.piece[x].length; y++) {
                     if (this.piece[y][x] !== -1) {
@@ -506,7 +522,7 @@ phina.define("MainScene", {
                 this.isSleeping = true;
 
                 setTimeout(function () {
-                    _this3.exit({ score: _this3.score });
+                    _this3.exit({ score: _this3.score, level: _this3.currentLevel });
                     // this.app.replaceScene(EndScene());
                 }, 1500);
             }
@@ -674,18 +690,18 @@ phina.define("ResultScene", {
     init: function init(params) {
         var _this = this;
 
-        // スコア
-        // console.log(params.score);
         this.superInit({
             text: "score",
             message: TITLE_NAME,
             // url:,
+            hashtags: "phina_js",
             width: SCREEN_WIDTH,
             height: SCREEN_HEIGHT,
             backgroundColor: MAIN_BACKGROUND_COLOR
         });
-        // this.scoreText.text = params.score;
+        // this.scoreText.text = "score";
         this.scoreLabel.text = params.score;
+        this.messageLabel.text = "レベル：" + params.level;
         this.playButton.onpush = function () {
             // this.app.replaceScene(TitleScene());
             _this.exit();
@@ -699,6 +715,7 @@ phina.define("ResultScene", {
  */
 phina.define("TitleScene", {
     superClass: "phina.game.TitleScene",
+
     init: function init() {
         var _this = this;
 
@@ -708,6 +725,7 @@ phina.define("TitleScene", {
             width: SCREEN_WIDTH,
             height: SCREEN_HEIGHT
         });
+
         this.polygon = phina.display.PolygonShape({
             fill: "rgb(133, 226, 77)",
             stroke: "transparent",
@@ -723,8 +741,9 @@ phina.define("TitleScene", {
         //     this.app.replaceScene(MainScene());
         // });
     },
+
     update: function update() {
         this.touchLabel.alpha -= 0.02;
-        if (this.touchLabel.alpha < 0) this.touchLabel.alpha = 1;
+        if (this.touchLabel.alpha <= 0) this.touchLabel.alpha = 1;
     }
 });
