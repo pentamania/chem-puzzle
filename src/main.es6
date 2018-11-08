@@ -1,11 +1,10 @@
-
 /**
  * ゲーム用定数作成
  */
 const TITLE_NAME = "なんかパズル（仮）";
 const SCREEN_WIDTH = 800;
 const SCREEN_HEIGHT = 640;
-const MAIN_BACKGROUND_COLOR = 'rgb(101, 88, 88)';
+const MAIN_BACKGROUND_COLOR = "rgb(101, 88, 88)";
 
 const BLOCK_SIZE = 32;
 const PIECE_TYPES_COUNT = 3;
@@ -31,15 +30,15 @@ const BORDER_SCORE_UNIT = 20000;
  */
 phina.globalize();
 
-phina.main(()=> {
-    var app = GameApp({
-        // startLabel: 'title',
-        startLabel: 'main',
-        // assets: ASSETS,
-        width: SCREEN_WIDTH,
-        height: SCREEN_HEIGHT,
-        fps: 60,
-    });
+phina.main(() => {
+  var app = GameApp({
+    // startLabel: 'title',
+    // startLabel: "main",
+    // assets: ASSETS,
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+    fps: 60
+  });
 
-    app.run();
+  app.run();
 });
