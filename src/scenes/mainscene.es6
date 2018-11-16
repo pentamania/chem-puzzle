@@ -64,22 +64,22 @@ phina.namespace(function() {
       [-1, -1, -1]
     ]
   ];
+
   /**
    * ベースとなるFRAMEを改変してNxMのピース行列配列を返す
    * 現在は3x3のみ
-   * TODO：piece参照を渡して初期化のみをしてinitializePieceとする？
    * @return {NxM_matrix}
    */
-  const createPiece = function() {
-    // ベースとなるピース配列をランダム選択
+  const initializePiece = function(piece) {
+    if (piece == null) piece = [].concat(PIECE_FRAMES[0]);
+
+    /* ベースとなるピース配列をランダム選択 */
     const basePiece = PIECE_FRAMES[Math.randint(0, PIECE_FRAMES.length - 1)];
 
-    let piece = [];
     for (let x = 0; x < basePiece.length; x++) {
-      piece[x] = [];
       for (let y = 0; y < basePiece[x].length; y++) {
         if (basePiece[x][y] !== BLOCK_TYPES["EMPTY"]) {
-          // ブロック部分（1）をランダムな数字に変える
+          // ブロック部分（-1以外）をランダムな数字に変える
           piece[x][y] = Math.randint(1, PIECE_TYPES_NUM);
         } else {
           // 空白（-1）はそのまま
@@ -87,6 +87,7 @@ phina.namespace(function() {
         }
       }
     }
+
     // ランダムで回転
     if (Math.randbool()) {
       piece = getRotatedPiece(piece, Math.randbool());
@@ -105,9 +106,9 @@ phina.namespace(function() {
   const getRotatedPiece = function(piece, ccw = true) {
     let newPiece = [];
 
-    for (var x = 0, x_len = piece.length; x < x_len; x++) {
+    for (let x = 0, x_len = piece.length; x < x_len; x++) {
       newPiece[x] = [];
-      for (var y = 0, y_len = piece[x].length; y < y_len; y++) {
+      for (let y = 0, y_len = piece[x].length; y < y_len; y++) {
         if (ccw) {
           // 左回り
           newPiece[x][y] = piece[y][x_len - 1 - x];
@@ -126,6 +127,8 @@ phina.namespace(function() {
    */
   phina.define("MainScene", {
     superClass: "DisplayScene",
+
+    piece: [].concat(PIECE_FRAMES[0]),
 
     init: function() {
       this.superInit({
@@ -302,7 +305,7 @@ phina.namespace(function() {
      * @return {void}
      */
     resetPiece: function() {
-      this.piece = createPiece();
+      initializePiece(this.piece);
       this.px = PIECE_INIT_POSITION.x;
       this.py = PIECE_INIT_POSITION.y;
     },
