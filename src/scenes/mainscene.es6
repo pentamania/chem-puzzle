@@ -27,8 +27,9 @@ phina.namespace(function() {
   const SP_RECOVERY_VALUE_MIN = 4;
   const SP_GAUGE_DECREASE_INTERVAL = 16;
 
+  const DROP_INTERVAL_INIT = 40; // 落下待機の初期値
   const DROP_INTERVAL_MIN = 8; // 落下待機値最小（低いほど落下速度高）
-  const KEY_INPUT_INTERVAL = 8;
+  const KEY_INPUT_INTERVAL = 4; // 押しっぱなしを受け付けるフレーム間隔
 
   /**
    * 壁と空白部分のみの初期mapを生成
@@ -68,6 +69,7 @@ phina.namespace(function() {
   /**
    * ベースとなるFRAMEを改変してNxMのピース行列配列を返す
    * 現在は3x3のみ
+   * FIXME: 回転できてない不具合
    * @return {NxM_matrix}
    */
   const initializePiece = function(piece) {
@@ -91,6 +93,9 @@ phina.namespace(function() {
     // ランダムで回転
     if (Math.randbool()) {
       piece = getRotatedPiece(piece, Math.randbool());
+      console.log("rotated",piece);
+    } else {
+      console.log("no rotate", piece);
     }
 
     return piece;
@@ -156,11 +161,16 @@ phina.namespace(function() {
 
       this.resetPiece();
       /* params */
-      this.timer = 0;
       this.gameLevel = 1;
       this.score = 0;
-      this.dropInterval = 80; // 自然落下の頻度：レベルで加速
+      this.dropInterval = DROP_INTERVAL_INIT; // 自然落下の頻度：レベルで加速
       this.isSleeping = false;
+
+      this.timer = 0;
+      // this._currentPieceAge = 0;
+      this._sideInputCounter = 0;
+      this._downInputCounter = 0;
+      this._dropCounter = 0;
 
       // UIとか ==============================
       this.levelLabel = Label({
@@ -229,8 +239,11 @@ phina.namespace(function() {
 
       var kb = app.keyboard;
 
-      // カウントアップを行う
+      // カウントアップ
       ++this.timer;
+      ++this._sideInputCounter;
+      ++this._downInputCounter;
+      ++this._dropCounter;
 
       // UI更新
       this.levelLabel.text = "LEVEL: " + this.gameLevel;
@@ -243,26 +256,52 @@ phina.namespace(function() {
 
       /*
         左右キー操作
-        TODO：押しっぱなしに対応、keydownがあったときはgetkeyを発動しない
+        MEMO: 左右同時入力のときは右が優先になる
        */
-      if (kb.getKeyDown("right")) this.shiftPieceSideWay();
-      if (kb.getKeyDown("left")) this.shiftPieceSideWay(true);
+      if (kb.getKeyDown("right")) {
+        this.shiftPieceSideWay();
+        this._sideInputCounter = 0;
+      } else if (kb.getKey("right") && this._sideInputCounter >= KEY_INPUT_INTERVAL) {
+        // 押しっぱなし処理、入力開始（keydown）と同時に発動させない
+        this.shiftPieceSideWay();
+        this._sideInputCounter = 0;
+      }
+      if (kb.getKeyDown("left")) {
+        this.shiftPieceSideWay(true);
+        this._sideInputCounter = 0;
+      } else if (kb.getKey("left") && this._sideInputCounter >= KEY_INPUT_INTERVAL) {
+        // 押しっぱなし
+        this.shiftPieceSideWay(true);
+        this._sideInputCounter = 0;
+      }
 
       /*
         下ボタン：入力による落下
         押しっぱなしでも落ちるが、毎フレームは実行しない
         自然落下と同時に発生させない
       */
-      if (kb.getKey("down") && this.timer % KEY_INPUT_INTERVAL === 0) {
+      if (kb.getKeyDown("down")) {
         this.downStackCheck();
-      } else if (this.timer % this.dropInterval === 0) {
-        // 一定時間ごとにブロック自由落下
+        this._downInputCounter = 0;
+        this._dropCounter = 0;
+      } else if (kb.getKey("down") && this._downInputCounter >= KEY_INPUT_INTERVAL) {
+        // 押しっぱなし
         this.downStackCheck();
+        this._downInputCounter = 0;
+        this._dropCounter = 0;
+      // } else if (this.timer % this.dropInterval === 0 && this._downInputCounter >= KEY_INPUT_INTERVAL) {
+      } else if (this._dropCounter >= this.dropInterval) {
+        // 一定時間ごとのブロック自由落下
+        this.downStackCheck();
+        this._downInputCounter = 0;
+        this._dropCounter = 0;
       }
 
       /* 上ボタン: 高速落下 */
       if (kb.getKeyDown("up")) {
         while (this.downStackCheck()) {}
+        this._downInputCounter = 0;
+        this._dropCounter = 0;
       }
 
       /* z:左回転, x:右回転 */
@@ -306,6 +345,7 @@ phina.namespace(function() {
      */
     resetPiece: function() {
       initializePiece(this.piece);
+      // console.log("piece reset:", this.piece);
       this.px = PIECE_INIT_POSITION.x;
       this.py = PIECE_INIT_POSITION.y;
     },
@@ -340,7 +380,7 @@ phina.namespace(function() {
      * ピース回転を試みる
      * 成功したら現ピースを回転
      * @param  {Boolean} ccw 回転角度
-     * @return {Boolean} 成否を返すが今の所使わない
+     * @return {Boolean} 回転成否を返すが今の所使わない
      */
     tryPieceRotation: function(ccw = false) {
       let temp = getRotatedPiece(this.piece, ccw);
@@ -487,6 +527,7 @@ phina.namespace(function() {
 
     /**
      * ブロック同士がつながっているかどうかチェック
+     * collisionMapは参照だけ、変更しない
      * @return {void}
      */
     checkBlockConnection: function() {
