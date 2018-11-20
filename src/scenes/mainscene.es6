@@ -54,11 +54,11 @@ phina.namespace(function() {
 
   // prettier-ignore
   const PIECE_FRAMES = [
-    [
-      [-1, -1, -1],
-      [-1, 1, -1],
-      [-1, 1, -1]
-    ],
+    // [
+    //   [-1, -1, -1],
+    //   [-1, 1, -1],
+    //   [-1, 1, -1]
+    // ],
     [
       [-1, 1, -1],
       [-1, 1, -1],
@@ -75,8 +75,9 @@ phina.namespace(function() {
   const initializePiece = function(piece) {
     if (piece == null) piece = [].concat(PIECE_FRAMES[0]);
 
-    /* ベースとなるピース配列をランダム選択 */
-    const basePiece = PIECE_FRAMES[Math.randint(0, PIECE_FRAMES.length - 1)];
+    // /* ベースとなるピース配列をランダム選択 */
+    // const basePiece = PIECE_FRAMES[Math.randint(0, PIECE_FRAMES.length - 1)];
+    const basePiece = PIECE_FRAMES[0];
 
     for (let x = 0; x < basePiece.length; x++) {
       for (let y = 0; y < basePiece[x].length; y++) {
@@ -93,9 +94,9 @@ phina.namespace(function() {
     // ランダムで回転
     if (Math.randbool()) {
       piece = getRotatedPiece(piece, Math.randbool());
-      console.log("rotated",piece);
+      // console.log("rotated",piece);
     } else {
-      console.log("no rotate", piece);
+      // console.log("no rotate", piece);
     }
 
     return piece;
@@ -344,7 +345,7 @@ phina.namespace(function() {
      * @return {void}
      */
     resetPiece: function() {
-      initializePiece(this.piece);
+      this.piece = initializePiece(this.piece);
       // console.log("piece reset:", this.piece);
       this.px = PIECE_INIT_POSITION.x;
       this.py = PIECE_INIT_POSITION.y;
