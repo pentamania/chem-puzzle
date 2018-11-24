@@ -160,8 +160,12 @@ phina.namespace(function() {
         }
       }
 
-      this.resetPiece();
       /* params */
+      this._px = 0;
+      this._py = 0;
+      this.resetPiece();
+      this._updateMapFlg = true; // 初回更新
+
       this.gameLevel = 1;
       this.score = 0;
       this.dropInterval = DROP_INTERVAL_INIT; // 自然落下の頻度：レベルで加速
@@ -233,6 +237,25 @@ phina.namespace(function() {
         .setOrigin(0, 1)
         .setPosition(0, GAMEFIELD_HEIGHT)
         .addChildTo(this.blockLayer);
+    },
+
+    _accessor: {
+      px: {
+        get: function() { return this._px; },
+        set: function(v) {
+          if (v === this._px) return;
+          this._updateMapFlg = true;
+          this._px = v;
+        },
+      },
+      py: {
+        get: function() { return this._py; },
+        set: function(v) {
+          if (v === this._py) return;
+          this._updateMapFlg = true;
+          this._py = v;
+        },
+      },
     },
 
     update: function(app) {
@@ -317,8 +340,10 @@ phina.namespace(function() {
         this.specialFlush();
       }
 
-      this.updateMap();
-      this.drawBlock();
+      if (this._updateMapFlg) {
+        this.updateMap();
+        this.drawBlock();
+      }
     },
 
     /* TODO 仮想キー */
@@ -381,7 +406,7 @@ phina.namespace(function() {
      * ピース回転を試みる
      * 成功したら現ピースを回転
      * @param  {Boolean} ccw 回転角度
-     * @return {Boolean} 回転成否を返すが今の所使わない
+     * @return {Boolean} 回転成否を返す。が、今のところ使ってない
      */
     tryPieceRotation: function(ccw = false) {
       let temp = getRotatedPiece(this.piece, ccw);
@@ -399,6 +424,7 @@ phina.namespace(function() {
       }
       if (isRotatable === true) {
         this.piece = temp;
+        this._updateMapFlg = true;
         return true
       } else {
         return false;
@@ -429,11 +455,13 @@ phina.namespace(function() {
             this.map[col][row] = this.collisionMap[col][row];
         }
       }
+
+      this._updateMapFlg = false;
     },
 
     /**
      * ブロック描画
-     * マップデータに応じてブロックの最高制
+     * マップデータに応じてブロックのvisual変化
      * @return {void}
      */
     drawBlock: function() {
@@ -460,7 +488,7 @@ phina.namespace(function() {
       this.specialGauge.setValue(0);
       this.effectFilter.animate(() => {
         this.isSleeping = false;
-        this.deleteGrouped();
+        this.deleteGroupedBlock();
       });
     },
 
@@ -482,7 +510,7 @@ phina.namespace(function() {
       }
 
       if (canFall === true) {
-        this.py++;
+        this.py++; // == map更新
         return true;
       } else {
         // 設置：判定マップ更新
@@ -522,6 +550,7 @@ phina.namespace(function() {
           this.recoveryValue = SP_RECOVERY_VALUE_INIT;
         }
 
+        this._updateMapFlg = true;
         return false;
       }
     },
@@ -595,7 +624,7 @@ phina.namespace(function() {
      * グループ化されたピースを探索して消す ＆ 加点処理
      * @return {void}
      */
-    deleteGrouped: function() {
+    deleteGroupedBlock: function() {
       let blockCount = 0;
       let comboCount = 0;
       let addedScore = 0;
@@ -651,6 +680,8 @@ phina.namespace(function() {
       this.score += addedScore;
       this.comboCountLabel.text = comboCount + " Compounds!";
       this.checkLevelUp();
+
+      this._updateMapFlg = true;
     },
 
     /**
