@@ -1,6 +1,6 @@
 {
   "name": "chem-puzzle",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "puzzle game made with phina.js",
   "main": "index.js",
   "scripts": {
